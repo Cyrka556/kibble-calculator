@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bowl — dog feeding calculator</title>
+<meta name="description" content="Grams of food per day, and per meal, from your dog's weight, age and the calories in the bag.">
+<meta name="theme-color" content="#0F2A26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bowl">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --enamel:#0F2A26;
+  --enamel-deep:#0A1E1B;
+  --enamel-rim:#1B403A;
+  --cream:#F2EDE0;
+  --chalk:#9FB8AE;
+  --kibble:#E0A23C;
+  --clay:#D2705A;
+  --radius:18px;
+  --pad:20px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0}
+body{
+  background:var(--enamel);
+  background-image:radial-gradient(120% 60% at 50% -10%, #17423A 0%, var(--enamel) 55%, var(--enamel-deep) 100%);
+  background-attachment:fixed;
+  color:var(--cream);
+  font-family:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  font-size:16px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  padding:0 0 env(safe-area-inset-bottom);
+}
+.wrap{max-width:520px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 18px 56px}
+
+/* ---------- type ---------- */
+h1,h2,h3{font-family:"Bricolage Grotesque","Instrument Sans",sans-serif;font-weight:800;margin:0;letter-spacing:-.02em;line-height:1.05}
+.eyebrow{font-family:"DM Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--chalk)}
+.mono{font-family:"DM Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* ---------- header ---------- */
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+.mark{display:flex;align-items:center;gap:10px}
+.mark svg{width:30px;height:30px;flex:none}
+.mark h1{font-size:27px}
+.mark .sub{display:block;margin-top:2px}
+
+/* ---------- dog chips ---------- */
+.dogs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.dogs::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;border:1px solid var(--enamel-rim);background:rgba(255,255,255,.03);
+  color:var(--chalk);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:500;
+  cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .15s,color .15s,border-color .15s;
+}
+.chip[aria-pressed="true"]{background:var(--cream);color:var(--enamel-deep);border-color:var(--cream);font-weight:600}
+.chip.ghost{border-style:dashed}
+
+/* ---------- result card ---------- */
+.card{
+  background:linear-gradient(170deg,rgba(255,255,255,.055),rgba(255,255,255,.015));
+  border:1px solid var(--enamel-rim);border-radius:var(--radius);
+  padding:var(--pad);margin-bottom:14px;
+}
+.stage-strip{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.badge{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  border-radius:6px;padding:4px 8px;background:var(--kibble);color:#2A1A05;font-weight:500}
+.badge.quiet{background:transparent;border:1px solid var(--enamel-rim);color:var(--chalk)}
+
+/* signature: the bowl */
+.bowl-row{display:flex;align-items:center;gap:18px}
+.bowl{width:132px;height:104px;flex:none}
+.readout{min-width:0}
+.readout .amount{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:46px;line-height:.95;letter-spacing:-.035em;display:block}
+.readout .unit{font-size:15px;font-weight:600;color:var(--chalk);margin-left:2px;letter-spacing:0}
+.readout .per{margin-top:7px;font-size:14px;color:var(--chalk)}
+.readout .alt{margin-top:2px;font-size:13px;color:var(--chalk);opacity:.8}
+
+.totals{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--enamel-rim)}
+.tot{min-width:0}
+.tot .k{font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--chalk);display:block;margin-bottom:3px}
+.tot .v{font-size:17px;font-weight:600}
+
+.meals{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;
+  background:rgba(0,0,0,.18);border-radius:12px;padding:10px 12px}
+.meals .lbl{font-size:15px;color:var(--cream);font-weight:600}
+.meals .sug{font-size:12.5px;color:var(--chalk);font-weight:400;margin-top:2px}
+.stepper{display:flex;align-items:center;gap:2px}
+.stepper button{width:32px;height:32px;border-radius:9px;border:1px solid var(--enamel-rim);background:rgba(255,255,255,.04);
+  color:var(--cream);font-size:18px;line-height:1;cursor:pointer;font-family:inherit}
+.stepper button:disabled{opacity:.3;cursor:default}
+.stepper .n{width:30px;text-align:center;font-family:"DM Mono",monospace;font-size:16px}
+
+/* ---------- notes ---------- */
+.notes{list-style:none;margin:0;padding:0}
+.notes li{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14.5px;line-height:1.45}
+.notes li:last-child{border-bottom:0;padding-bottom:0}
+.notes li:first-child{padding-top:0}
+.notes .tag{font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--chalk);
+  flex:none;width:56px;padding-top:3px}
+.notes li.warn .tag{color:var(--clay)}
+.notes li.warn{color:#F6DCD5}
+
+/* ---------- form ---------- */
+details.panel{border:1px solid var(--enamel-rim);border-radius:var(--radius);margin-bottom:12px;background:rgba(255,255,255,.02)}
+details.panel>summary{list-style:none;cursor:pointer;padding:16px var(--pad);display:flex;justify-content:space-between;align-items:center;gap:12px}
+details.panel>summary::-webkit-details-marker{display:none}
+details.panel>summary h3{font-size:16px;letter-spacing:-.01em}
+details.panel>summary .hint{font-size:13px;color:var(--chalk);text-align:right;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+details.panel>summary .caret{flex:none;color:var(--chalk);transition:transform .2s}
+details.panel[open]>summary .caret{transform:rotate(180deg)}
+.panel-body{padding:0 var(--pad) var(--pad)}
+
+label.field{display:block;margin-bottom:14px}
+label.field>span{display:block;font-family:"DM Mono",monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--chalk);margin-bottom:6px}
+input,select{
+  width:100%;font-family:inherit;font-size:16px;color:var(--cream);
+  background:rgba(0,0,0,.25);border:1px solid var(--enamel-rim);border-radius:11px;padding:11px 12px;
+  appearance:none;-webkit-appearance:none;
+}
+select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%239FB8AE' stroke-width='1.6' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:34px}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--kibble);outline-offset:2px}
+.two{display:flex;gap:10px}
+.two>*{flex:1;min-width:0}
+
+.segmented{display:flex;gap:6px}
+.segmented button{flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--enamel-rim);
+  background:rgba(0,0,0,.2);color:var(--chalk);font-family:inherit;font-size:13.5px;cursor:pointer}
+.segmented button[aria-pressed="true"]{background:var(--cream);color:var(--enamel-deep);border-color:var(--cream);font-weight:600}
+
+.slider-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px}
+.slider-row .val{font-family:"DM Mono",monospace;font-size:15px;color:var(--cream)}
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;padding:0;border:0;height:26px}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--enamel-rim)}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--enamel-rim)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--kibble);margin-top:-9px;border:0}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--kibble);border:0}
+.range-ends{margin-bottom:18px;display:flex;justify-content:space-between;font-size:11.5px;color:var(--chalk);font-family:"DM Mono",monospace}
+
+.actions{display:flex;gap:10px;margin-top:6px}
+.btn{flex:1;padding:13px;border-radius:12px;border:1px solid var(--enamel-rim);background:rgba(255,255,255,.04);
+  color:var(--cream);font-family:inherit;font-size:15px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--kibble);border-color:var(--kibble);color:#2A1A05}
+.btn.danger{color:var(--clay);flex:0 0 auto;padding:13px 16px;font-weight:500}
+
+.empty{text-align:center;padding:14px 0 6px;color:var(--chalk);font-size:14.5px}
+footer{margin-top:26px;font-size:12.5px;line-height:1.55;color:var(--chalk);opacity:.85}
+footer a{color:var(--chalk)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,10px);background:var(--cream);color:var(--enamel-deep);
+  padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.22s;z-index:9}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* --- v2 additions --- */
+.crosscheck{margin-top:14px;padding-top:14px;border-top:1px solid var(--enamel-rim);font-size:13px;color:var(--chalk);line-height:1.5}
+.crosscheck b{color:var(--cream);font-weight:600}
+.nudge{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:11px 12px;border-radius:12px;
+  background:rgba(210,112,90,.13);border:1px solid rgba(210,112,90,.35);font-size:13.5px;line-height:1.45;color:#F6DCD5}
+.nudge button{background:none;border:0;color:#F6DCD5;font:inherit;text-decoration:underline;cursor:pointer;padding:0}
+.backup{display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--enamel-rim)}
+.backup button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--enamel-rim);background:transparent;
+  color:var(--chalk);font-family:inherit;font-size:13px;cursor:pointer}
+.help{font-size:12.5px;color:var(--chalk);margin:-6px 0 14px;line-height:1.45}
+.units{position:relative}
+.units .suffix{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:"DM Mono",monospace;
+  font-size:13px;color:var(--chalk);pointer-events:none}
+.units input{padding-right:58px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="mark">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M4 17h32c0 10-7.2 17-16 17S4 27 4 17Z" fill="none" stroke="#F2EDE0" stroke-width="2.6" stroke-linejoin="round"/>
+        <path d="M8.5 20.5h23c-.6 6.4-5.4 10.5-11.5 10.5S9.1 26.9 8.5 20.5Z" fill="#E0A23C"/>
+        <circle cx="13" cy="10" r="2.6" fill="#9FB8AE"/><circle cx="20" cy="7.5" r="2.6" fill="#9FB8AE"/><circle cx="27" cy="10" r="2.6" fill="#9FB8AE"/>
+      </svg>
+      <div>
+        <h1>Bowl</h1>
+        <span class="eyebrow sub">Feeding calculator</span>
+      </div>
+    </div>
+    <button class="chip ghost" id="addDog" type="button">+ Add dog</button>
+  </header>
+
+  <div class="dogs" id="dogChips"></div>
+
+  <section class="card" id="result" aria-live="polite"></section>
+
+  <section class="card" id="notesCard">
+    <ul class="notes" id="notes"></ul>
+  </section>
+
+  <details class="panel" id="panelDog">
+    <summary><h3>Your dog</h3><span class="hint" id="hintDog"></span><span class="caret">▾</span></summary>
+    <div class="panel-body">
+      <label class="field"><span>Name</span><input id="fName" type="text" placeholder="e.g. Barley" autocomplete="off"></label>
+
+      <label class="field"><span>Breed</span><select id="fBreed"></select></label>
+
+      <label class="field units"><span id="curLabel">Weight today</span>
+        <input id="fCur" type="number" min="0.3" max="120" step="0.1" inputmode="decimal" placeholder="16.4">
+        <span class="suffix">kg</span>
+      </label>
+      <p class="help" id="curHelp"></p>
+
+      <div class="field" id="adultWeightField">
+        <div class="slider-row">
+          <span class="eyebrow">Expected adult weight</span>
+          <span class="val" id="wtVal">—</span>
+        </div>
+        <input id="fWeight" type="range" min="1" max="100" step="0.5" aria-label="Expected adult weight">
+        <div class="range-ends"><span id="wtMin"></span><span id="wtMax"></span></div>
+      </div>
+
+      <div class="field">
+        <span class="eyebrow" style="display:block;margin-bottom:6px">Age</span>
+        <div class="segmented" id="ageMode" style="margin-bottom:10px">
+          <button type="button" data-mode="dob" aria-pressed="true">Date of birth</button>
+          <button type="button" data-mode="approx" aria-pressed="false">Approximate age</button>
+        </div>
+        <div id="ageDob"><input id="fDob" type="date"></div>
+        <div id="ageApprox" hidden class="two">
+          <input id="fAgeNum" type="number" min="0" step="1" inputmode="numeric" placeholder="12">
+          <select id="fAgeUnit"><option value="weeks">weeks old</option><option value="months" selected>months old</option><option value="years">years old</option></select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="saveDog" type="button">Save dog</button>
+        <button class="btn danger" id="deleteDog" type="button" hidden>Delete</button>
+      </div>
+
+      <div class="backup">
+        <button type="button" id="btnExport">Copy backup</button>
+        <button type="button" id="btnImport">Restore backup</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="panel" id="panelFood">
+    <summary><h3>The food</h3><span class="hint" id="hintFood"></span><span class="caret">▾</span></summary>
+    <div class="panel-body">
+      <label class="field"><span>Food name (optional)</span><input id="fFood" type="text" placeholder="e.g. Barking Heads Puppy Days" autocomplete="off"></label>
+      <label class="field units"><span>Energy in the food</span>
+        <input id="fKcal" type="number" min="150" max="600" step="1" inputmode="numeric" placeholder="380">
+        <span class="suffix">kcal/100 g</span>
+      </label>
+      <p class="help">On the bag as metabolisable energy — often written as kcal/100 g, or as kcal/kg (divide by ten). Typical dry kibble is 350–420; wet food is 70–120. This is the number that turns calories into grams, so it's worth getting right.</p>
+      <label class="field units" style="margin-bottom:6px"><span>Grams per cup (optional)</span>
+        <input id="fGpc" type="number" min="40" max="200" step="1" inputmode="numeric" placeholder="110">
+        <span class="suffix">g/cup</span>
+      </label>
+      <p class="help" style="margin-bottom:0">Only used to show a cup equivalent. Weighing on kitchen scales is far more accurate than scooping.</p>
+    </div>
+  </details>
+
+  <details class="panel" id="panelAdj">
+    <summary><h3>Fine-tuning</h3><span class="hint" id="hintAdj"></span><span class="caret">▾</span></summary>
+    <div class="panel-body">
+      <div class="field"><span class="eyebrow" style="display:block;margin-bottom:6px">Activity</span>
+        <div class="segmented" id="segActivity">
+          <button type="button" data-v="low" aria-pressed="false">Low</button>
+          <button type="button" data-v="normal" aria-pressed="true">Normal</button>
+          <button type="button" data-v="high" aria-pressed="false">High</button>
+        </div>
+      </div>
+      <div class="field"><span class="eyebrow" style="display:block;margin-bottom:6px">Body condition</span>
+        <div class="segmented" id="segBody">
+          <button type="button" data-v="under" aria-pressed="false">Too thin</button>
+          <button type="button" data-v="ideal" aria-pressed="true">Just right</button>
+          <button type="button" data-v="over" aria-pressed="false">Carrying weight</button>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0"><span class="eyebrow" style="display:block;margin-bottom:6px">Neutered or spayed</span>
+        <div class="segmented" id="segNeut">
+          <button type="button" data-v="no" aria-pressed="true">No</button>
+          <button type="button" data-v="yes" aria-pressed="false">Yes</button>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <footer>
+    Puppy amounts come from the NRC (2006) growth equation and the revision by Klein et al. (2019) on privately owned puppies; adult and senior amounts from resting energy requirement (70 × kg<sup>0.75</sup>) with standard life-stage and neutering factors, which line up with FEDIAF's 95–110 kcal/kg<sup>0.75</sup>. The cross-check compares this against the bag-style chart in
+    <a href="https://www.petmd.com/dog/nutrition/are-you-feeding-your-dog-right-amount" target="_blank" rel="noopener">PetMD's feeding guide</a>.
+        Every equation is a starting point — individual dogs vary by a third either way. Weigh regularly, feel for ribs, and let your vet have the final word.
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================== storage ============================== */
+const mem = {};
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
+};
+if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+
+/* ============================== breeds ============================== */
+const BREEDS = [
+  ["Affenpinscher","toy",[7,10]],["Chihuahua","toy",[4,6]],["Havanese","toy",[7,13]],
+  ["Maltese","toy",[4,7]],["Papillon","toy",[5,10]],["Pomeranian","toy",[3,7]],
+  ["Toy Poodle","toy",[4,6]],["Yorkshire Terrier","toy",[4,7]],["Miniature Dachshund","toy",[8,11]],
+  ["Bichon Frise","small",[12,18]],["Border Terrier","small",[11,16]],["Boston Terrier","small",[12,25]],
+  ["Cairn Terrier","small",[13,18]],["Cavalier King Charles Spaniel","small",[13,18]],["Cockapoo","small",[12,24]],
+  ["Dachshund (standard)","small",[16,32]],["French Bulldog","small",[16,28]],["Jack Russell Terrier","small",[13,17]],
+  ["Lhasa Apso","small",[12,18]],["Miniature Poodle","small",[10,15]],["Miniature Schnauzer","small",[11,20]],
+  ["Norfolk Terrier","small",[11,12]],["Pembroke Welsh Corgi","small",[22,30]],["Pug","small",[14,18]],
+  ["Shih Tzu","small",[9,16]],["West Highland White Terrier","small",[15,20]],
+  ["Beagle","medium",[20,30]],["Border Collie","medium",[30,45]],["Bull Terrier","medium",[50,70]],
+  ["Cocker Spaniel","medium",[26,34]],["Dalmatian","medium",[45,70]],["English Bulldog","medium",[40,50]],
+  ["English Springer Spaniel","medium",[40,50]],["Australian Shepherd","medium",[40,65]],["Basset Hound","medium",[40,65]],
+  ["Chow Chow","medium",[45,70]],["Shiba Inu","medium",[17,23]],["Siberian Husky","medium",[35,60]],
+  ["Staffordshire Bull Terrier","medium",[24,38]],["Standard Poodle","medium",[45,70]],["Vizsla","medium",[45,65]],
+  ["Whippet","medium",[25,40]],
+  ["Airedale Terrier","large",[50,70]],["Akita","large",[70,130]],["Alaskan Malamute","large",[75,100]],
+  ["Belgian Malinois","large",[40,80]],["Boxer","large",[50,80]],["Doberman Pinscher","large",[60,100]],
+  ["Flat-Coated Retriever","large",[60,70]],["German Shepherd","large",[50,90]],["German Shorthaired Pointer","large",[45,70]],
+  ["Golden Retriever","large",[55,75]],["Greyhound","large",[60,70]],["Irish Setter","large",[60,70]],
+  ["Labradoodle","large",[50,75]],["Labrador Retriever","large",[55,80]],["Old English Sheepdog","large",[60,100]],
+  ["Rhodesian Ridgeback","large",[70,85]],["Samoyed","large",[35,65]],["Weimaraner","large",[55,90]],
+  ["Bernese Mountain Dog","giant",[70,115]],["Bullmastiff","giant",[100,130]],["Cane Corso","giant",[88,110]],
+  ["Dogue de Bordeaux","giant",[99,110]],["Great Dane","giant",[110,175]],["Great Pyrenees","giant",[85,115]],
+  ["Irish Wolfhound","giant",[105,120]],["Leonberger","giant",[90,170]],["Mastiff","giant",[120,200]],
+  ["Newfoundland","giant",[100,150]],["Rottweiler","giant",[80,135]],["Saint Bernard","giant",[120,180]]
+].sort((a,b)=>a[0].localeCompare(b[0]));
+
+/* ============================== chart cross-check ==============================
+   Cups per day from PetMD's worked examples: adult 382 kcal/cup, puppy 406,
+   senior 423. Used only as a sanity check against the energy calculation.     */
+const ADULT=[[3,12,[.5,1.25]],[13,20,[1.25,5/3]],[21,35,[5/3,7/3]],[36,50,[7/3,3]],[51,75,[3,3.75]],[76,100,[3.75,14/3]]];
+const ADULT_XL={base:14/3,per10:.25};
+const SENIOR=[[3,12,[1/3,1]],[13,20,[1,1.25]],[21,35,[4/3,2]],[36,50,[2,7/3]],[51,75,[7/3,3]],[76,100,[3,11/3]]];
+const SENIOR_XL={base:4,per10:.25};
+const PUP_BANDS=[[2,12],[13,20],[21,50],[51,75],[76,100]];
+const PUP=[
+  [[.25,1.25],[.75,1.75],[1,2.75],[1.5,3],[1.75,3]],
+  [[.5,4/3],[4/3,2],[1.75,3.5],[4,14/3],[4,14/3]],
+  [[.5,1.25],[5/3,2],[2.25,3.25],[4.25,4.75],[4.25,5]],
+  [[1/3,1.25],[1.25,5/3],[1.75,3.25],[3.5,16/3],[5.25,5.75]],
+  [null,null,null,[3.25,4.25],[4.25,14/3]]
+];
+const PUP_XL=[{base:3,per10:.25},{base:14/3,per10:1/3},{base:5,per10:1/3},{base:5.75,per10:1/3},{base:14/3,per10:1/3}];
+const REF_KCAL={puppy:406,adult:382,senior:423};
+const SENIOR_AGE={giant:7,large:8,medium:10,small:11,toy:12};
+const LB=2.20462;
+
+function bandLookup(table,xl,lb){
+  if(lb>100){ const v=xl.base+xl.per10*((lb-100)/10); return [v,v]; }
+  for(const [lo,hi,r] of table) if(lb<=hi) return r.slice();
+  return table[table.length-1][2].slice();
+}
+const PUP_AGES=[[1.5,3],[4,5],[6,8],[9,11],[12,24]];
+function pupBracket(m){
+  let best=0, bd=Infinity;
+  PUP_AGES.forEach(([lo,hi],i)=>{ const d=m<lo?lo-m:m>hi?m-hi:0; if(d<bd){bd=d;best=i;} });
+  return best;
+}
+function chartKcal(stage,lb,months){
+  let cups=null;
+  if(stage==="puppy"){
+    const b=pupBracket(months);
+    if(lb>100){ const x=PUP_XL[b], v=x.base+x.per10*((lb-100)/10); cups=[v,v]; }
+    else { let i=PUP_BANDS.findIndex(([lo,hi])=>lb<=hi); if(i<0) i=PUP_BANDS.length-1; cups=PUP[b][i]; }
+    if(!cups) cups=bandLookup(ADULT,ADULT_XL,lb);
+  }
+  else cups = stage==="senior" ? bandLookup(SENIOR,SENIOR_XL,lb) : bandLookup(ADULT,ADULT_XL,lb);
+  const ref=REF_KCAL[stage];
+  return [cups[0]*ref, cups[1]*ref];
+}
+
+/* ============================== the energy engine ==============================
+   Puppies: NRC (2006) growth equation, and the Klein et al. (2019) revision
+   fitted to privately owned puppies, which runs roughly 20% lower. The NRC
+   equation matches Labrador-sized puppies well but overshoots small breeds,
+   so the point estimate sits near Klein for small dogs and near NRC for large.
+   Adults and seniors: resting energy requirement × life-stage factor.        */
+const RER = kg => 70*Math.pow(kg,0.75);
+const NRC_W = {toy:.1, small:.2, medium:.45, large:.8, giant:.8};
+
+function puppyKcal(curKg, adultKg, size){
+  const p=Math.min(1, curKg/Math.max(curKg,adultKg));
+  const m=Math.pow(curKg,0.75);
+  const nrc = 130*m*3.2*(Math.exp(-0.87*p)-0.1);
+  const klein = (1.063-0.565*p)*m*239.006;      /* MJ → kcal */
+  const lo=Math.min(klein,nrc), hi=Math.max(klein,nrc);
+  return {lo, hi, point: klein + NRC_W[size]*(nrc-klein), p};
+}
+function adultKcal(kg, dog, senior){
+  let f = dog.neutered==="yes" ? 1.6 : 1.8;
+  if(senior) f *= 0.9;
+  const point = RER(kg)*f;
+  return {lo:point*0.85, hi:point*1.15, point};
+}
+
+function calculate(dog){
+  const size=sizeOf(dog), months=ageMonths(dog), seniorAt=SENIOR_AGE[size];
+  const cur=Number(dog.cur)||0, adultKg=Number(dog.kg)||cur;
+  const notes=[];
+  let stage = months<12 ? "puppy" : (months<24 && (size==="large"||size==="giant") && cur < adultKg*0.98) ? "puppy"
+            : months/12>=seniorAt ? "senior" : "adult";
+
+  let e;
+  if(stage==="puppy") e=puppyKcal(cur, adultKg, size);
+  else e=adultKcal(cur, dog, stage==="senior");
+
+  /* activity and condition shift the whole estimate */
+  const act={low:.88, normal:1, high:1.14}[dog.activity]||1;
+  const bcs={over:.85, ideal:1, under:1.1}[dog.body]||1;
+  const k=act*bcs;
+  const kcal={lo:e.lo*k, hi:e.hi*k, point:e.point*k};
+
+  /* grams */
+  const kcalPerG=(Number(dog.kcal)||380)/100;
+  const grams={lo:kcal.lo/kcalPerG, hi:kcal.hi/kcalPerG, point:kcal.point/kcalPerG};
+
+  /* meals */
+  let mealOpts;
+  if(size==="toy") mealOpts = months<4?[4,5]:months<6?[3,3]:[2,2];
+  else if(size==="large"||size==="giant") mealOpts = months<4?[3,3]:[2,3];
+  else mealOpts = months<4?[3,3]:[2,2];
+
+  /* chart cross-check, converted to grams of this food */
+  const chart=chartKcal(stage, (stage==="puppy"?adultKg:cur)*LB, months);
+  const chartG=[chart[0]/kcalPerG, chart[1]/kcalPerG];
+
+  /* --- notes --- */
+  if(months<1.5) notes.push(["warn","Very young","Under six weeks a puppy is normally still nursing. Follow your breeder's and vet's weaning plan rather than these numbers."]);
+  if(stage==="puppy"){
+    notes.push(["","Growth","The equation uses today's weight against the "+adultKg.toFixed(1)+" kg adult target — it's the fraction of adult size reached that sets the calories, so this number climbs as your puppy does. Reweigh weekly and update the weight."]);
+    if(size==="large"||size==="giant") notes.push(["","Formula","Large- and giant-breed puppies need a food formulated for them, and steady growth matters more than fast growth: overfeeding at this stage causes lasting joint problems. Your vet can say when to move to adult food, often 18 to 24 months."]);
+    if(size==="toy"||size==="small") notes.push(["","Small breeds","Research on Yorkshire, Norfolk and miniature Schnauzer puppies found the standard NRC equation overshoots small breeds by a fair margin, so this estimate is pulled toward the lower, real-world intake figures."]);
+  }
+  if(stage==="adult"){
+    const yrs=seniorAt-months/12;
+    notes.push(["","Senior at "+seniorAt,"A "+size+" dog counts as senior from about "+seniorAt+" years — "+(yrs>1?Math.round(yrs)+" years away":"less than a year away")+" — when the calorie figure drops by roughly a tenth."]);
+  }
+  if(stage==="senior") notes.push(["","Senior","Past "+seniorAt+" this drops the maintenance factor by about a tenth for a "+size+" dog. If muscle is being lost rather than fat, that's a vet conversation, not a bigger bowl."]);
+  if(dog.neutered==="yes") notes.push(["","Neutered","Neutering lowers maintenance needs by roughly a tenth, which is already applied here."]);
+  if(dog.body==="over") notes.push(["warn","Weight","Reduced by about a sixth. Enter the weight your dog should be rather than the weight they are. If there's a lot to lose, a vet-supervised plan beats guesswork — dogs on crash diets lose muscle."]);
+  if(dog.body==="under") notes.push(["","Weight","Nudged up by a tenth. If the weight doesn't move within a few weeks, that's a vet visit rather than more food."]);
+  notes.push(["","Treats","Everything else counts. Keep treats and training rewards to about a tenth of the day's calories — roughly "+Math.round(kcal.point*0.1)+" kcal — and take it out of meals."]);
+  notes.push(["","Check","Ribs you can feel but not see, a waist from above, steady energy, firm stools. Adjust by eye every couple of weeks; the equation is a starting point, not a prescription."]);
+  if(!dog.kcal) notes.push(["","Food energy","Using 380 kcal/100 g as a stand-in. Put your bag's actual figure under The food — it's the single biggest source of error in the gram amount."]);
+
+  return {stage,size,months,kcal,grams,mealOpts,notes,chartG,adultKg,p:e.p,seniorAt,kcalPerG};
+}
+
+/* ============================== helpers ============================== */
+function sizeOf(dog){
+  const b=BREEDS.find(x=>x[0]===dog.breed);
+  if(b) return b[1];
+  const m=ageMonths(dog), grown=!isNaN(m)&&m>=18;
+  const kg = grown ? (Number(dog.cur)||Number(dog.kg)||10) : (Number(dog.kg)||Number(dog.cur)||10);
+  const lb=kg*LB;
+  return lb<10?"toy":lb<26?"small":lb<51?"medium":lb<91?"large":"giant";
+}
+function ageMonths(dog){
+  if(dog.ageMode==="dob"){
+    if(!dog.dob) return NaN;
+    const d=new Date(dog.dob), n=new Date();
+    let m=(n.getFullYear()-d.getFullYear())*12+(n.getMonth()-d.getMonth());
+    const a=new Date(d); a.setMonth(d.getMonth()+m);
+    const b=new Date(d); b.setMonth(d.getMonth()+m+1);
+    return Math.max(0, m+(n-a)/(b-a));
+  }
+  const n=Number(dog.ageNum)||0;
+  return dog.ageUnit==="weeks"?n*12/52.1775:dog.ageUnit==="years"?n*12:n;
+}
+function ageWeeks(dog){ return ageMonths(dog)*52.1775/12; }
+function fmtAge(dog){
+  const w=ageWeeks(dog), m=ageMonths(dog);
+  if(w<26) return Math.round(w)+" weeks";
+  if(m<24) return Math.round(m)+" months";
+  const y=Math.floor(m/12), r=Math.round(m-y*12);
+  return y+(r?" yr "+r+" mo":" years");
+}
+const FR=[[0,""],[1/4,"¼"],[1/3,"⅓"],[1/2,"½"],[2/3,"⅔"],[3/4,"¾"],[1,""]];
+const FR_SMALL=[[0,""],[1/8,"⅛"],[1/6,"⅙"],[1/4,"¼"],[1/3,"⅓"],[1/2,"½"],[2/3,"⅔"],[3/4,"¾"],[1,""]];
+function cupStr(c){
+  if(c<=0) return "0";
+  const set=c<1?FR_SMALL:FR;
+  let w=Math.floor(c), f=c-w, best=set[0];
+  for(const p of set) if(Math.abs(p[0]-f)<Math.abs(best[0]-f)) best=p;
+  if(best[0]===1){ w+=1; best=set[0]; }
+  if(w===0 && best[1]==="") return c.toFixed(1);
+  return (w?w:"")+(best[1]||"");
+}
+const g0=g=>Math.round(g);
+const g5=g=>g>=200?Math.round(g/5)*5:Math.round(g);
+
+/* ============================== state ============================== */
+let dogs=[], cur=0, editing=false;
+try{ dogs=JSON.parse(store.get("bowl.dogs")||"[]"); }catch(e){ dogs=[]; }
+cur=Math.min(Number(store.get("bowl.cur")||0), Math.max(0,dogs.length-1));
+const blank=()=>({name:"",breed:"Golden Retriever",kg:0,cur:"",curAt:0,dob:"",ageMode:"dob",ageNum:12,ageUnit:"weeks",
+  food:"",kcal:"",gpc:"",activity:"normal",body:"ideal",neutered:"no",meals:null});
+let draft=blank();
+function save(){ store.set("bowl.dogs",JSON.stringify(dogs)); store.set("bowl.cur",String(cur)); }
+const $=id=>document.getElementById(id);
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1700); }
+
+/* ============================== the bowl ============================== */
+function bowlSVG(fill,lo,hi){
+  const f=Math.min(1,Math.max(0,fill)), top=28, bot=88;
+  const yAt=v=>bot-(bot-top)*Math.min(1,Math.max(0,v));
+  const halfAt=yy=>14+44*((bot-yy)/(bot-top));
+  const y=yAt(f);
+  const grad=v=>{ const yy=yAt(v), hw=halfAt(yy)-5;
+    return `<line x1="${66-hw}" y1="${yy}" x2="${66+hw}" y2="${yy}" stroke="#F2EDE0" stroke-width="1.2" stroke-dasharray="3 4" opacity=".38"/>`; };
+  return `<svg class="bowl" viewBox="0 0 132 104" role="img" aria-label="Bowl showing this meal against the estimated range">
+    <defs><clipPath id="cb"><path d="M8 27h116c0 34-26 61-58 61S8 61 8 27Z"/></clipPath></defs>
+    <g clip-path="url(#cb)">
+      <rect x="0" y="${y}" width="132" height="104" fill="#E0A23C"/>
+      <rect x="0" y="${y}" width="132" height="2.5" fill="#F0BC63"/>
+      ${grad(lo)}${grad(hi)}
+    </g>
+    <path d="M8 27h116c0 34-26 61-58 61S8 61 8 27Z" fill="none" stroke="#F2EDE0" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="3" y="22.5" width="126" height="5" rx="2.5" fill="#9FB8AE"/>
+  </svg>`;
+}
+
+/* ============================== rendering ============================== */
+function render(){
+  const chips=$("dogChips");
+  chips.innerHTML = dogs.map((d,i)=>`<button class="chip" type="button" data-i="${i}" aria-pressed="${i===cur&&!editing}">${d.name||"Unnamed"}</button>`).join("");
+  chips.hidden = dogs.length<2;
+
+  const r=$("result"), n=$("notesCard");
+  const dog = editing ? draft : dogs[cur];
+  if(!dog){ r.innerHTML=`<div class="empty"><p style="margin:0">No dogs yet — add one and the day's food appears here.</p></div>`; n.hidden=true; return; }
+  syncHints(dog);
+
+  const missing=[];
+  if(!(Number(dog.cur)>0)) missing.push("a weight");
+  if(isNaN(ageMonths(dog))) missing.push("a date of birth");
+  if(missing.length){
+    r.innerHTML=`<div class="empty"><p style="margin:0">Add ${missing.join(" and ")} and the day's food appears here.</p></div>`;
+    n.hidden=true; $("panelDog").open=true; return;
+  }
+
+  const c=calculate(dog);
+  const meals=Math.min(6,Math.max(1, dog.meals || c.mealOpts[0]));
+  const perDay=c.grams.point, perMeal=perDay/meals;
+  const stageWord={puppy:"Puppy",adult:"Adult",senior:"Senior"}[c.stage];
+  const full=(c.grams.hi/meals)*1.2||1;
+  const frac=v=>Math.min(1,Math.max(0,v/full));
+  const gpc=Number(dog.gpc)||0;
+
+  r.innerHTML=`
+    <div class="stage-strip">
+      <span class="badge">${stageWord}</span>
+      <span class="badge quiet">${fmtAge(dog)}</span>
+      <span class="badge quiet">${Number(dog.cur).toFixed(1)} kg${c.stage==="puppy"?" · "+Math.round(c.p*100)+"% grown":""}</span>
+    </div>
+    <div class="bowl-row">
+      ${bowlSVG(frac(perMeal), frac(c.grams.lo/meals), frac(c.grams.hi/meals))}
+      <div class="readout">
+        <span class="amount">${g0(perMeal)}<span class="unit">g</span></span>
+        <div class="per">per meal${dog.name?", for "+dog.name:""}</div>
+        <div class="alt">${gpc?cupStr(perMeal/gpc)+" cups · ":""}${Math.round(c.kcal.point/meals)} kcal</div>
+      </div>
+    </div>
+    <div class="meals">
+      <div><div class="lbl">${meals} meal${meals>1?"s":""} a day</div>
+      <div class="sug">Suggested at this age: ${c.mealOpts[0]===c.mealOpts[1]?c.mealOpts[0]:c.mealOpts[0]+"–"+c.mealOpts[1]}</div></div>
+      <div class="stepper">
+        <button type="button" id="mDown" aria-label="Fewer meals" ${meals<=1?"disabled":""}>−</button>
+        <span class="n">${meals}</span>
+        <button type="button" id="mUp" aria-label="More meals" ${meals>=6?"disabled":""}>+</button>
+      </div>
+    </div>
+    <div class="totals">
+      <div class="tot"><span class="k">Grams a day</span><span class="v mono">${g5(perDay)} g</span></div>
+      <div class="tot"><span class="k">Calories a day</span><span class="v mono">${Math.round(c.kcal.point/5)*5} kcal</span></div>
+      <div class="tot"><span class="k">Plausible range</span><span class="v mono">${g5(c.grams.lo)}–${g5(c.grams.hi)} g</span></div>
+      <div class="tot"><span class="k">Food energy</span><span class="v mono">${Math.round(c.kcalPerG*100)} kcal/100g</span></div>
+    </div>
+    <div class="crosscheck">Cross-check: a printed bag chart for this weight and stage would suggest
+      <b>${g5(c.chartG[0])}–${g5(c.chartG[1])} g</b> a day of this food.
+      ${overlap(c)?"That brackets the figure above.":"That doesn't overlap — worth comparing against your own bag's chart before settling on an amount."}</div>
+    ${staleWeight(dog)}`;
+
+  $("mDown").onclick=()=>setMeals(meals-1);
+  $("mUp").onclick=()=>setMeals(meals+1);
+  const rw=$("reweigh"); if(rw) rw.onclick=()=>{ $("panelDog").open=true; $("fCur").focus(); $("fCur").select(); };
+
+  n.hidden=false;
+  $("notes").innerHTML=c.notes.map(([cls,tag,body])=>`<li class="${cls}"><span class="tag">${tag}</span><span>${body}</span></li>`).join("");
+}
+function overlap(c){ return c.grams.point>=c.chartG[0]*0.9 && c.grams.point<=c.chartG[1]*1.1; }
+function staleWeight(dog){
+  const days=dog.curAt?Math.floor((Date.now()-dog.curAt)/864e5):0;
+  const m=ageMonths(dog);
+  if(m>=12 || !dog.curAt || days<10) return "";
+  return `<div class="nudge"><span>Weight last set ${days} days ago. A growing puppy's calories track their weight — <button type="button" id="reweigh">update it</button>.</span></div>`;
+}
+function setMeals(v){ const d=editing?draft:dogs[cur]; d.meals=v; if(!editing) save(); render(); }
+function syncHints(dog){
+  $("hintDog").textContent=(dog.breed==="__other"?"Mixed breed":dog.breed)+(Number(dog.cur)?" · "+Number(dog.cur).toFixed(1)+" kg":"");
+  $("hintFood").textContent=(dog.food||"Unnamed food")+" · "+(Number(dog.kcal)||380)+" kcal/100g";
+  $("hintAdj").textContent=[dog.activity!=="normal"?dog.activity+" activity":null,
+    dog.body!=="ideal"?(dog.body==="over"?"carrying weight":"too thin"):null,
+    dog.neutered==="yes"?"neutered":null].filter(Boolean).join(" · ")||"Standard";
+}
+
+/* ============================== form ============================== */
+const sel=$("fBreed");
+sel.innerHTML=`<option value="__other">Mixed breed or not listed</option>`+BREEDS.map(b=>`<option value="${b[0]}">${b[0]}</option>`).join("");
+
+function weightRange(breed){ const b=BREEDS.find(x=>x[0]===breed); return b?[b[2][0]/LB,b[2][1]/LB]:[2,80]; }
+function syncWeightSlider(){
+  const s=$("fWeight");
+  if(sel.value==="__other"){ s.min=1; s.max=90; }
+  else { const [lo,hi]=weightRange(sel.value); s.min=(Math.floor(lo*2)/2).toFixed(1); s.max=(Math.ceil(hi*2)/2).toFixed(1); }
+  $("wtMin").textContent=Number(s.min).toFixed(1)+" kg"; $("wtMax").textContent=Number(s.max).toFixed(1)+" kg";
+  const mid=(Number(s.min)+Number(s.max))/2;
+  s.value=Math.min(Number(s.max),Math.max(Number(s.min),Number(draft.kg)||mid));
+  draft.kg=Number(s.value);
+  $("wtVal").textContent=draft.kg.toFixed(1)+" kg";
+}
+function syncAgeUI(){
+  const m=ageMonths(draft), sz=sizeOf(draft);
+  const grown=!isNaN(m)&&(m>=24||(m>=15&&sz!=="large"&&sz!=="giant"));
+  $("adultWeightField").hidden=grown;
+  $("curLabel").textContent = grown ? "Weight" : "Weight today";
+  $("curHelp").textContent = grown
+    ? "Use the weight your dog should be. If they're carrying a bit, feed to the target rather than the reading."
+    : "Straight off the scales today — for a puppy this is the number that drives everything, so keep it current.";
+}
+function loadDraft(d){
+  draft=Object.assign(blank(),d);
+  $("fName").value=draft.name; sel.value=BREEDS.some(b=>b[0]===draft.breed)?draft.breed:"__other";
+  $("fCur").value=draft.cur||"";
+  syncWeightSlider();
+  $("fDob").value=draft.dob||""; $("fAgeNum").value=draft.ageNum||""; $("fAgeUnit").value=draft.ageUnit;
+  setSeg("ageMode",draft.ageMode,"mode");
+  $("ageDob").hidden=draft.ageMode!=="dob"; $("ageApprox").hidden=draft.ageMode==="dob";
+  $("fFood").value=draft.food||""; $("fKcal").value=draft.kcal||""; $("fGpc").value=draft.gpc||"";
+  setSeg("segActivity",draft.activity); setSeg("segBody",draft.body); setSeg("segNeut",draft.neutered);
+  syncAgeUI();
+}
+function setSeg(id,val,attr){ [...$(id).children].forEach(b=>b.setAttribute("aria-pressed",String(b.dataset[attr||"v"]===val))); }
+function seg(id,attr,fn){ $(id).addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
+  const v=b.dataset[attr||"v"]; setSeg(id,v,attr); fn(v); }); }
+function live(){ if(editing||!dogs.length) render(); else { Object.assign(dogs[cur],draft); save(); render(); } }
+
+sel.addEventListener("change",()=>{ draft.breed=sel.value;
+  if(sel.value!=="__other"){ const [lo,hi]=weightRange(sel.value); draft.kg=(lo+hi)/2; }
+  syncWeightSlider(); live(); });
+$("fWeight").addEventListener("input",()=>{ draft.kg=Number($("fWeight").value); $("wtVal").textContent=draft.kg.toFixed(1)+" kg"; live(); });
+$("fCur").addEventListener("input",()=>{ draft.cur=$("fCur").value; draft.curAt=Date.now(); live(); });
+$("fName").addEventListener("input",()=>{ draft.name=$("fName").value; live(); });
+$("fDob").addEventListener("input",()=>{ draft.dob=$("fDob").value; syncAgeUI(); live(); });
+$("fAgeNum").addEventListener("input",()=>{ draft.ageNum=$("fAgeNum").value; syncAgeUI(); live(); });
+$("fAgeUnit").addEventListener("change",()=>{ draft.ageUnit=$("fAgeUnit").value; syncAgeUI(); live(); });
+$("fFood").addEventListener("input",()=>{ draft.food=$("fFood").value; live(); });
+$("fKcal").addEventListener("input",()=>{ draft.kcal=$("fKcal").value; live(); });
+$("fGpc").addEventListener("input",()=>{ draft.gpc=$("fGpc").value; live(); });
+seg("ageMode","mode",v=>{ draft.ageMode=v; $("ageDob").hidden=v!=="dob"; $("ageApprox").hidden=v==="dob"; syncAgeUI(); live(); });
+seg("segActivity",null,v=>{ draft.activity=v; live(); });
+seg("segBody",null,v=>{ draft.body=v; live(); });
+seg("segNeut",null,v=>{ draft.neutered=v; live(); });
+
+$("addDog").onclick=()=>{ editing=true; loadDraft(blank()); $("deleteDog").hidden=true; $("panelDog").open=true; render(); $("fName").focus(); };
+$("saveDog").onclick=()=>{
+  if(!draft.name.trim()) draft.name = draft.breed==="__other"?"My dog":draft.breed.split(" ")[0];
+  if(editing){ dogs.push(Object.assign({},draft)); cur=dogs.length-1; editing=false; }
+  else if(dogs.length){ dogs[cur]=Object.assign({},draft); }
+  save(); $("panelDog").open=false; loadDraft(dogs[cur]); $("deleteDog").hidden=false; render(); toast("Saved");
+};
+$("deleteDog").onclick=()=>{
+  if(!dogs.length) return;
+  if(!confirm("Delete "+(dogs[cur].name||"this dog")+"?")) return;
+  dogs.splice(cur,1); cur=Math.max(0,cur-1); save();
+  if(dogs.length){ editing=false; loadDraft(dogs[cur]); } else { editing=true; loadDraft(blank()); }
+  $("deleteDog").hidden=!dogs.length; render();
+};
+$("dogChips").addEventListener("click",e=>{ const b=e.target.closest(".chip"); if(!b) return;
+  cur=Number(b.dataset.i); editing=false; save(); loadDraft(dogs[cur]); $("deleteDog").hidden=false; render(); });
+
+/* backup: the dogs live only on this device, so give them a way out */
+$("btnExport").onclick=async()=>{
+  const text=JSON.stringify(dogs);
+  try{ await navigator.clipboard.writeText(text); toast("Backup copied"); }
+  catch(e){ prompt("Copy this and keep it somewhere safe:", text); }
+};
+$("btnImport").onclick=()=>{
+  const text=prompt("Paste a backup:");
+  if(!text) return;
+  try{
+    const parsed=JSON.parse(text);
+    if(!Array.isArray(parsed)) throw 0;
+    dogs=parsed; cur=0; editing=!dogs.length; save();
+    if(dogs.length) loadDraft(dogs[0]); else loadDraft(blank());
+    $("deleteDog").hidden=!dogs.length; render(); toast("Restored "+dogs.length+" dog"+(dogs.length===1?"":"s"));
+  }catch(e){ toast("That didn't look like a backup"); }
+};
+
+/* ============================== boot ============================== */
+$("fDob").max=new Date().toISOString().slice(0,10);
+if(dogs.length){ loadDraft(dogs[cur]); $("deleteDog").hidden=false; }
+else { editing=true; loadDraft(blank()); $("panelDog").open=true; }
+render();
+
+if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
