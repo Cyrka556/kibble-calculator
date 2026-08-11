@@ -1,5 +1,5 @@
 /* Bowl — offline shell. Bump CACHE when you change any of the files below. */
-const CACHE = "bowl-v6";
+const CACHE = "bowl-v8";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icons/icon.svg", "./icons/icon-192.png", "./icons/icon-512.png",
@@ -7,7 +7,11 @@ const SHELL = [
 ];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => {}))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", e => {
