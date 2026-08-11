@@ -65,6 +65,24 @@ below adult weight; senior from 7 years for giant, 8 large, 10 medium, 11 small,
 12 toy. Meal frequency follows PetMD: three a day under four months, four to
 five for toy puppies, two to three thereafter by size.
 
+### The day: sleep and exercise
+
+The clock card divides 24 hours into overnight sleep, daytime naps, meals and
+walks. Meals are spaced evenly through the waking hours; each one is followed by
+a walk or a play session, then naps sized to make up whatever sleep the night
+doesn't cover. Gaps are ordinary awake time. Wake and bed times and the number
+of walks are set under *The day*.
+
+Sleep totals use the standard veterinary bands — 18–20 h under three months,
+16–18 h to six months, 14–16 h to a year, 12–14 h adult, 16–18 h senior.
+
+Puppy exercise uses the Royal Kennel Club's five minutes per month of age, per
+outing, up to twice a day. That rule has no trial evidence behind it and the
+PDSA says so plainly, so Bowl treats it as a **ceiling on formal lead walking**
+rather than a target, and pairs it with an equal amount of unhurried sniffing,
+as suggested in *Veterinary Practice* (2024). Adults get a size-based band,
+scaled down for seniors and shifted by the activity setting.
+
 ### Sources
 
 - National Research Council (2006), *Nutrient Requirements of Dogs and Cats*
@@ -73,6 +91,10 @@ five for toy puppies, two to three thereafter by size.
 - Bradley et al. (2021), *Animals* 11(5):1380 — Norfolk terrier growth
 - FEDIAF Nutritional Guidelines (95 and 110 kcal/kg^0.75 adult maintenance)
 - PetMD, *How Much To Feed Your Dog* — the cross-check charts
+- The Royal Kennel Club — puppy and dog walking tips (the five-minute rule)
+- PDSA, and *Veterinary Practice* (July 2024) — on the rule's evidence base
+- Krontveit et al. (2012) — exercise, terrain and hip dysplasia in large breeds
+- AKC, VCA and Vets4Pets — sleep requirements by life stage
 
 ## Saved data
 

@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Bowl — dog feeding calculator</title>
 <meta name="description" content="Grams of food per day, and per meal, from your dog's weight, age and the calories in the bag.">
-<meta name="theme-color" content="#0F2A26">
+<meta name="theme-color" content="#143A2E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Bowl">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -163,6 +163,24 @@ footer a{color:var(--chalk)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
+/* --- day card --- */
+.day-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+.day-head h3{font-size:17px}
+.dial-row{display:flex;gap:16px;align-items:center}
+.dial{width:172px;height:172px;flex:none}
+.dial-figs{min-width:0;flex:1}
+.fig{margin-bottom:13px}
+.fig:last-child{margin-bottom:0}
+.fig .k{font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--chalk);display:block;margin-bottom:2px}
+.fig .v{font-size:19px;font-weight:600;line-height:1.15}
+.fig .s{font-size:12.5px;color:var(--chalk);line-height:1.35;margin-top:2px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--enamel-rim);font-size:12.5px;color:var(--chalk)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:block}
+.sched{list-style:none;margin:14px 0 0;padding:14px 0 0;border-top:1px solid var(--enamel-rim)}
+.sched li{display:flex;gap:12px;align-items:baseline;padding:6px 0;font-size:14px}
+.sched .t{font-family:"DM Mono",monospace;font-size:12.5px;color:var(--chalk);flex:none;width:92px}
+.sched .w{color:var(--chalk)}
 /* --- v2 additions --- */
 .crosscheck{margin-top:14px;padding-top:14px;border-top:1px solid var(--enamel-rim);font-size:13px;color:var(--chalk);line-height:1.5}
 .crosscheck b{color:var(--cream);font-weight:600}
@@ -200,6 +218,8 @@ footer a{color:var(--chalk)}
   <div class="dogs" id="dogChips"></div>
 
   <section class="card" id="result" aria-live="polite"></section>
+
+  <section class="card" id="dayCard"></section>
 
   <section class="card" id="notesCard">
     <ul class="notes" id="notes"></ul>
@@ -269,6 +289,27 @@ footer a{color:var(--chalk)}
     </div>
   </details>
 
+  <details class="panel" id="panelDay">
+    <summary><h3>The day</h3><span class="hint" id="hintDay"></span><span class="caret">▾</span></summary>
+    <div class="panel-body">
+      <div class="two">
+        <label class="field"><span>Wakes up</span><input id="fWake" type="time"></label>
+        <label class="field"><span>Settles for the night</span><input id="fBed" type="time"></label>
+      </div>
+      <div class="field">
+        <div class="slider-row" style="margin-bottom:8px">
+          <span class="eyebrow">Walks a day</span>
+          <div class="stepper">
+            <button type="button" id="wDown" aria-label="Fewer walks">−</button>
+            <span class="n" id="wN">2</span>
+            <button type="button" id="wUp" aria-label="More walks">+</button>
+          </div>
+        </div>
+      </div>
+      <p class="help" style="margin-bottom:0">The clock spaces meals evenly through the waking hours, puts a walk or a play session after some of them, and fills the gaps with the naps needed to hit the day's sleep total. It's a shape for the day, not a timetable to enforce.</p>
+    </div>
+  </details>
+
   <details class="panel" id="panelAdj">
     <summary><h3>Fine-tuning</h3><span class="hint" id="hintAdj"></span><span class="caret">▾</span></summary>
     <div class="panel-body">
@@ -298,6 +339,9 @@ footer a{color:var(--chalk)}
   <footer>
     Puppy amounts come from the NRC (2006) growth equation and the revision by Klein et al. (2019) on privately owned puppies; adult and senior amounts from resting energy requirement (70 × kg<sup>0.75</sup>) with standard life-stage and neutering factors, which line up with FEDIAF's 95–110 kcal/kg<sup>0.75</sup>. The cross-check compares this against the bag-style chart in
     <a href="https://www.petmd.com/dog/nutrition/are-you-feeding-your-dog-right-amount" target="_blank" rel="noopener">PetMD's feeding guide</a>.
+    Sleep bands follow ordinary veterinary guidance (AKC, VCA, Vets4Pets). Puppy exercise follows the
+    <a href="https://www.royalkennelclub.com/your-dog/dog-training/get-started/dog-training-and-games/puppy-and-dog-walking-tips/" target="_blank" rel="noopener">Royal Kennel Club's</a>
+    five-minutes-per-month-of-age rule — which the PDSA points out has no trial evidence behind it, so it's used here as a ceiling on lead walking rather than a target.
         Every equation is a starting point — individual dogs vary by a third either way. Weigh regularly, feel for ribs, and let your vet have the final word.
   </footer>
 </div>
@@ -511,7 +555,7 @@ let dogs=[], cur=0, editing=false;
 try{ dogs=JSON.parse(store.get("bowl.dogs")||"[]"); }catch(e){ dogs=[]; }
 cur=Math.min(Number(store.get("bowl.cur")||0), Math.max(0,dogs.length-1));
 const blank=()=>({name:"",breed:"Golden Retriever",kg:0,cur:"",curAt:0,dob:"",ageMode:"dob",ageNum:12,ageUnit:"weeks",
-  food:"",kcal:"",gpc:"",activity:"normal",body:"ideal",neutered:"no",meals:null});
+  food:"",kcal:"",gpc:"",wake:"07:00",bed:"22:30",walks:2,activity:"normal",body:"ideal",neutered:"no",meals:null});
 let draft=blank();
 function save(){ store.set("bowl.dogs",JSON.stringify(dogs)); store.set("bowl.cur",String(cur)); }
 const $=id=>document.getElementById(id);
@@ -537,6 +581,147 @@ function bowlSVG(fill,lo,hi){
   </svg>`;
 }
 
+
+/* ============================== the day: sleep, walks, naps ==============================
+   Sleep totals follow the usual veterinary bands (AKC/VCA/Vets4Pets): very young
+   puppies 18-20 h, tapering to 12-14 h for an adult and back up for seniors.
+   Puppy exercise uses the Royal Kennel Club's five-minutes-per-month-of-age rule,
+   treated as a ceiling on formal lead walking rather than a target, with an equal
+   amount of unhurried sniffing alongside it (Veterinary Practice, 2024).        */
+function sleepBand(stage, months){
+  if(stage==="senior") return [16,18];
+  if(months<3)  return [18,20];
+  if(months<6)  return [16,18];
+  if(months<12) return [14,16];
+  return [12,14];
+}
+const ADULT_EX={toy:[30,60],small:[30,60],medium:[60,90],large:[60,120],giant:[45,90]};
+function exercisePlan(stage,size,months,walks,activity){
+  if(stage==="puppy"){
+    const per=Math.max(5, Math.round(months)*5);
+    return {kind:"puppy", per, total:per*walks, sniff:per};
+  }
+  let b=ADULT_EX[size].slice();
+  if(stage==="senior") b=[Math.round(b[0]*.6), Math.round(b[1]*.6)];
+  if(activity==="high") b=[Math.round(b[0]*1.15), Math.round(b[1]*1.2)];
+  if(activity==="low")  b=[Math.round(b[0]*.8), Math.round(b[1]*.8)];
+  const total=Math.round((b[0]+b[1])/2/5)*5;
+  return {kind:"adult", per:Math.round(total/walks/5)*5, total, band:b};
+}
+const parseHM=t=>{ const m=/^(\d{1,2}):(\d{2})$/.exec(t||""); return m?(+m[1])+(+m[2])/60:NaN; };
+const fmtHM=h=>{ h=((h%24)+24)%24; const H=Math.floor(h+1e-9), M=Math.round((h-H)*60);
+  return (M===60? String((H+1)%24).padStart(2,"0")+":00" : String(H).padStart(2,"0")+":"+String(M).padStart(2,"0")); };
+const fmtDur=h=>{ const m=Math.round(h*60); return m>=60 ? (m%60? Math.floor(m/60)+" h "+(m%60)+" min" : Math.floor(m/60)+" h") : m+" min"; };
+
+function dayPlan(dog, c, meals){
+  const wake=parseHM(dog.wake)||7, bed=parseHM(dog.bed)||22.5;
+  let awake=((bed-wake)%24+24)%24; if(awake<8) awake=8;
+  const night=24-awake;
+  const band=sleepBand(c.stage,c.months), target=(band[0]+band[1])/2;
+  const walks=Math.min(meals, Math.max(1, Math.min(4, dog.walks||2)));
+  const ex=exercisePlan(c.stage,c.size,c.months,walks,dog.activity);
+  const walkH=ex.per/60;
+
+  let daySleep=Math.min(Math.max(0,target-night), awake*0.7);
+
+  const N=meals, cyc=awake/N, napEach=daySleep/N, ev=[];
+  const walkAt=new Set();
+  for(let w=0;w<walks;w++) walkAt.add(walks===1?Math.min(N-1,Math.floor(N/2)):Math.round(w*(N-1)/(walks-1)));
+
+  ev.push({h:bed, len:night, kind:"sleep", label:"Down for the night"});
+  for(let i=0;i<N;i++){
+    const t=wake+i*cyc;
+    ev.push({h:t+0.15, len:0.35, kind:"meal", label:meals===1?"Meal":(i===0?"Breakfast":i===N-1?"Last meal":"Meal "+(i+1))});
+    let p=t+0.7;
+    if(walkAt.has(i)){ ev.push({h:p, len:walkH, kind:"walk", label:"Walk"}); p+=walkH+0.25; }
+    else { ev.push({h:p, len:0.4, kind:"play", label:"Play and training"}); p+=0.65; }
+    const room=Math.max(0,(t+cyc)-p-0.2), nap=Math.min(napEach, room);
+    if(nap>1.6 && room>=nap+0.5){
+      ev.push({h:p, len:nap/2, kind:"nap", label:"Nap"});
+      ev.push({h:p+nap/2+0.5, len:nap/2, kind:"nap", label:"Nap"});
+    } else if(nap>0.25) ev.push({h:p, len:nap, kind:"nap", label:"Nap"});
+  }
+  const r5=h=>Math.round(h*12)/12;
+  for(const e of ev) if(e.kind!=="sleep"){ e.h=r5(e.h); e.len=Math.max(1/12, r5(e.len)); }
+  const napTotal=ev.filter(e=>e.kind==="nap").reduce((a,e)=>a+e.len,0);
+  return {band,target,night,daySleep,napTotal,ev,walks,ex,wake,bed,awake};
+}
+
+const DAY_COL={sleep:"#356052", nap:"#6E9A8A", walk:"#F2EDE0", play:"#A8C0B5", meal:"#E0A23C"};
+function dialSVG(p){
+  const cx=100, cy=100, R=74, W=18;
+  const pol=(h,r)=>{ const a=h/24*2*Math.PI; return [cx+r*Math.sin(a), cy-r*Math.cos(a)]; };
+  const arc=(h0,len,r)=>{ len=Math.min(Math.max(len,0),23.9);
+    const [x0,y0]=pol(h0,r), [x1,y1]=pol(h0+len,r);
+    return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${len>12?1:0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`; };
+  let out=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="${W}"/>`;
+  for(const e of p.ev){
+    if(e.kind==="meal") continue;
+    const op = e.kind==="nap" ? .85 : e.kind==="play" ? .55 : 1;
+    out+=`<path d="${arc(e.h,e.len,R)}" fill="none" stroke="${DAY_COL[e.kind]}" stroke-width="${W}" opacity="${op}"/>`;
+  }
+  for(const e of p.ev){
+    if(e.kind!=="meal") continue;
+    const [x,y]=pol(e.h+e.len/2,R);
+    out+=`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="5.5" fill="${DAY_COL.meal}" stroke="#0F2A26" stroke-width="2"/>`;
+  }
+  for(const h of [0,6,12,18]){
+    const [tx,ty]=pol(h,R+17);
+    out+=`<text x="${tx.toFixed(1)}" y="${(ty+3.5).toFixed(1)}" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#9FB8AE">${String(h).padStart(2,"0")}</text>`;
+  }
+  out+=`<text x="${cx}" y="${cy-2}" text-anchor="middle" font-family="Bricolage Grotesque,sans-serif" font-weight="800" font-size="25" fill="#F2EDE0">${p.band[0]}–${p.band[1]}</text>`
+     + `<text x="${cx}" y="${cy+15}" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" letter-spacing="1.4" fill="#9FB8AE">HOURS ASLEEP</text>`;
+  return `<svg class="dial" viewBox="0 0 200 200" role="img" aria-label="24 hour clock: ${fmtDur(p.night)} overnight, ${fmtDur(p.napTotal)} of daytime naps, ${p.walks} walks and meals spaced through the waking hours">${out}</svg>`;
+}
+
+function renderDay(dog, c, meals){
+  const el=$("dayCard"), p=dayPlan(dog,c,meals);
+  const ex=p.ex;
+  const exLine = ex.kind==="puppy"
+    ? `${p.walks} × ${ex.per} min`
+    : `${p.walks} × ${ex.per} min`;
+  const exSub = ex.kind==="puppy"
+    ? `Five minutes per month of age, per outing — a ceiling, not a target. Add about the same again of unhurried sniffing, which doesn't count against it.`
+    : `Around ${ex.band[0]}–${ex.band[1]} min a day for a ${c.size} dog of this age.`;
+
+  const rows=p.ev.slice().sort((a,b)=>((a.h-p.wake+24)%24)-((b.h-p.wake+24)%24))
+    .map(e=>`<li><span class="t">${fmtHM(e.h)}${e.kind==="meal"?"":"–"+fmtHM(e.h+e.len)}</span>
+      <span class="${e.kind==="nap"||e.kind==="sleep"?"w":""}">${e.label}${e.kind==="walk"?` · ${ex.per} min`:""}</span></li>`).join("");
+
+  el.innerHTML=`
+    <div class="day-head"><h3>The day</h3><span class="eyebrow">${fmtHM(p.wake)} – ${fmtHM(p.bed)}</span></div>
+    <div class="dial-row">
+      ${dialSVG(p)}
+      <div class="dial-figs">
+        <div class="fig"><span class="k">Overnight</span><span class="v">${fmtDur(p.night)}</span></div>
+        <div class="fig"><span class="k">Daytime naps</span><span class="v">${fmtDur(p.napTotal)}</span>
+          <span class="s">in short blocks between meals</span></div>
+        <div class="fig"><span class="k">Exercise</span><span class="v">${exLine}</span>
+          <span class="s">${ex.kind==="puppy"?"lead walking, plus sniffing":ex.band[0]+"–"+ex.band[1]+" min a day is typical"}</span></div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i style="background:${DAY_COL.sleep}"></i>Sleep</span>
+      <span><i style="background:${DAY_COL.walk}"></i>Walk</span>
+      <span><i style="background:${DAY_COL.play};opacity:.5"></i>Play</span>
+      <span><i style="background:${DAY_COL.meal}"></i>Meal</span>
+      <span><i style="background:rgba(255,255,255,.12)"></i>Awake, free</span>
+    </div>
+    <ul class="sched">${rows}</ul>`;
+
+  const notes=[];
+  if(c.stage==="puppy"){
+    notes.push(["","Sleep","A puppy this age needs ${A}–${B} hours in every 24, most of it in naps. Overtiredness looks like biting, zoomies and ignoring you — the answer is usually a crate and a dark room, not more exercise."
+      .replace("${A}",p.band[0]).replace("${B}",p.band[1])]);
+    notes.push(["","Exercise","The five-minute rule comes from the Royal Kennel Club and has no trial behind it — the PDSA is explicit that it isn't right for every puppy. Treat "+ex.per+" minutes as the ceiling for lead walking per outing, and let the rest be sniffing and pottering at their own pace."]);
+    notes.push(["","Ground","Where matters as much as how long. Grass and soft, uneven ground over pavement; no stairs, no long ball-chasing, no jogging companion until the growth plates close. One study found dogs kept on slippery floors were around 1.6 times as likely to develop hip dysplasia."]);
+  } else {
+    notes.push(["","Sleep","Around "+p.band[0]+"–"+p.band[1]+" hours in every 24 is normal for this stage, mostly overnight with a few short naps. A sustained change in that pattern is worth a vet's opinion."]);
+    notes.push(["","Exercise","About "+ex.band[0]+"–"+ex.band[1]+" minutes a day, though the kind matters more than the count: sniffing, varied ground and some off-lead time tire a dog out more thoroughly than the same time on pavement."]);
+  }
+  return notes;
+}
+
 /* ============================== rendering ============================== */
 function render(){
   const chips=$("dogChips");
@@ -545,7 +730,7 @@ function render(){
 
   const r=$("result"), n=$("notesCard");
   const dog = editing ? draft : dogs[cur];
-  if(!dog){ r.innerHTML=`<div class="empty"><p style="margin:0">No dogs yet — add one and the day's food appears here.</p></div>`; n.hidden=true; return; }
+  if(!dog){ r.innerHTML=`<div class="empty"><p style="margin:0">No dogs yet — add one and the day's food appears here.</p></div>`; n.hidden=true; $("dayCard").hidden=true; return; }
   syncHints(dog);
 
   const missing=[];
@@ -553,7 +738,7 @@ function render(){
   if(isNaN(ageMonths(dog))) missing.push("a date of birth");
   if(missing.length){
     r.innerHTML=`<div class="empty"><p style="margin:0">Add ${missing.join(" and ")} and the day's food appears here.</p></div>`;
-    n.hidden=true; $("panelDog").open=true; return;
+    n.hidden=true; $("dayCard").hidden=true; $("panelDog").open=true; return;
   }
 
   const c=calculate(dog);
@@ -602,6 +787,10 @@ function render(){
   $("mUp").onclick=()=>setMeals(meals+1);
   const rw=$("reweigh"); if(rw) rw.onclick=()=>{ $("panelDog").open=true; $("fCur").focus(); $("fCur").select(); };
 
+  $("dayCard").hidden=false;
+  const dayNotes=renderDay(dog,c,meals);
+  c.notes.splice(Math.max(0,c.notes.length-2), 0, ...dayNotes);
+
   n.hidden=false;
   $("notes").innerHTML=c.notes.map(([cls,tag,body])=>`<li class="${cls}"><span class="tag">${tag}</span><span>${body}</span></li>`).join("");
 }
@@ -616,6 +805,7 @@ function setMeals(v){ const d=editing?draft:dogs[cur]; d.meals=v; if(!editing) s
 function syncHints(dog){
   $("hintDog").textContent=(dog.breed==="__other"?"Mixed breed":dog.breed)+(Number(dog.cur)?" · "+Number(dog.cur).toFixed(1)+" kg":"");
   $("hintFood").textContent=(dog.food||"Unnamed food")+" · "+(Number(dog.kcal)||380)+" kcal/100g";
+  $("hintDay").textContent=(dog.wake||"07:00")+" – "+(dog.bed||"22:30")+" · "+(dog.walks||2)+" walks";
   $("hintAdj").textContent=[dog.activity!=="normal"?dog.activity+" activity":null,
     dog.body!=="ideal"?(dog.body==="over"?"carrying weight":"too thin"):null,
     dog.neutered==="yes"?"neutered":null].filter(Boolean).join(" · ")||"Standard";
@@ -654,6 +844,7 @@ function loadDraft(d){
   setSeg("ageMode",draft.ageMode,"mode");
   $("ageDob").hidden=draft.ageMode!=="dob"; $("ageApprox").hidden=draft.ageMode==="dob";
   $("fFood").value=draft.food||""; $("fKcal").value=draft.kcal||""; $("fGpc").value=draft.gpc||"";
+  $("fWake").value=draft.wake||"07:00"; $("fBed").value=draft.bed||"22:30"; $("wN").textContent=draft.walks||2;
   setSeg("segActivity",draft.activity); setSeg("segBody",draft.body); setSeg("segNeut",draft.neutered);
   syncAgeUI();
 }
@@ -674,6 +865,10 @@ $("fAgeUnit").addEventListener("change",()=>{ draft.ageUnit=$("fAgeUnit").value;
 $("fFood").addEventListener("input",()=>{ draft.food=$("fFood").value; live(); });
 $("fKcal").addEventListener("input",()=>{ draft.kcal=$("fKcal").value; live(); });
 $("fGpc").addEventListener("input",()=>{ draft.gpc=$("fGpc").value; live(); });
+$("fWake").addEventListener("input",()=>{ draft.wake=$("fWake").value; live(); });
+$("fBed").addEventListener("input",()=>{ draft.bed=$("fBed").value; live(); });
+$("wDown").onclick=()=>{ draft.walks=Math.max(1,(Number(draft.walks)||2)-1); $("wN").textContent=draft.walks; live(); };
+$("wUp").onclick=()=>{ draft.walks=Math.min(4,(Number(draft.walks)||2)+1); $("wN").textContent=draft.walks; live(); };
 seg("ageMode","mode",v=>{ draft.ageMode=v; $("ageDob").hidden=v!=="dob"; $("ageApprox").hidden=v==="dob"; syncAgeUI(); live(); });
 seg("segActivity",null,v=>{ draft.activity=v; live(); });
 seg("segBody",null,v=>{ draft.body=v; live(); });
