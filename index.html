@@ -41,7 +41,70 @@ body{
   -webkit-font-smoothing:antialiased;
   padding:0 0 env(safe-area-inset-bottom);
 }
-.wrap{max-width:520px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 18px 56px}
+
+/* ============================== layout ============================== */
+:root{ --side:296px; --gutter:18px; }
+@media (min-width:1080px){ :root{ --side:352px; } }
+@media (min-width:1080px){ .shell{gap:32px;padding:0 32px} }
+.shell{min-height:100dvh}
+.sidebar{ }
+.brand{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+.iconbtn{width:34px;height:34px;border-radius:10px;border:1px solid var(--enamel-rim);background:transparent;
+  color:var(--chalk);font-size:15px;line-height:1;cursor:pointer;flex:none}
+.chip.block{display:block;width:100%;text-align:center;margin-bottom:14px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.topbar .mark h1{font-size:23px}
+.main-grid{display:grid;gap:14px}
+.scrim{display:none}
+
+/* --- phone: sidebar is an off-canvas drawer --- */
+@media (max-width:819px){
+  .shell{padding:calc(16px + env(safe-area-inset-top)) var(--gutter) 56px}
+  .sidebar{position:fixed;top:0;bottom:0;left:0;z-index:40;width:min(360px,90vw);
+    background:var(--enamel-deep);border-right:1px solid var(--enamel-rim);
+    padding:calc(18px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
+    transform:translateX(-101%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 40px rgba(0,0,0,.5)}
+  body.nav-open .sidebar{transform:none}
+  body.nav-open{overflow:hidden}
+  .scrim{display:block;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.55);
+    opacity:0;pointer-events:none;transition:opacity .26s}
+  body.nav-open .scrim{opacity:1;pointer-events:auto}
+}
+
+/* --- tablet and up: sidebar is a permanent column --- */
+@media (min-width:820px){
+  .shell{display:grid;grid-template-columns:var(--side) minmax(0,1fr);gap:26px;
+    max-width:1360px;margin:0 auto;padding:0 22px}
+  .sidebar{position:sticky;top:0;align-self:start;max-height:100dvh;overflow-y:auto;
+    padding:28px 4px 40px 0;scrollbar-width:thin}
+  .main{padding:28px 0 64px;min-width:0}
+  .topbar{display:none}
+  .iconbtn{display:none}
+  .panels details.panel{background:rgba(255,255,255,.025)}
+  .panels>details>summary .hint{display:none}
+  footer{max-width:70ch}
+}
+
+/* --- desktop: two content columns --- */
+@media (min-width:1180px){
+  .main-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:16px;
+    grid-template-areas:"result day" "notes day"}
+  #result{grid-area:result} #dayCard{grid-area:day} #notesCard{grid-area:notes}
+  .readout .amount{font-size:52px}
+}
+@media (min-width:1180px){
+  .dial{width:184px;height:184px}
+}
+@media (min-width:1080px){ .panels>details>summary .hint{display:block} }
+/* very wide: give the notes two columns so the page doesn't run long */
+@media (min-width:1500px){
+  .shell{max-width:1560px}
+  .notes{column-count:2;column-gap:28px}
+  .notes li{break-inside:avoid}
+}
+
 
 /* ---------- type ---------- */
 h1,h2,h3{font-family:"Bricolage Grotesque","Instrument Sans",sans-serif;font-weight:800;margin:0;letter-spacing:-.02em;line-height:1.05}
@@ -49,7 +112,6 @@ h1,h2,h3{font-family:"Bricolage Grotesque","Instrument Sans",sans-serif;font-wei
 .mono{font-family:"DM Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
 
 /* ---------- header ---------- */
-header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
 .mark{display:flex;align-items:center;gap:10px}
 .mark svg{width:30px;height:30px;flex:none}
 .mark h1{font-size:27px}
@@ -198,34 +260,27 @@ footer a{color:var(--chalk)}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="shell">
 
-  <header>
-    <div class="mark">
-      <svg viewBox="0 0 40 40" aria-hidden="true">
-        <path d="M4 17h32c0 10-7.2 17-16 17S4 27 4 17Z" fill="none" stroke="#F2EDE0" stroke-width="2.6" stroke-linejoin="round"/>
-        <path d="M8.5 20.5h23c-.6 6.4-5.4 10.5-11.5 10.5S9.1 26.9 8.5 20.5Z" fill="#E0A23C"/>
-        <circle cx="13" cy="10" r="2.6" fill="#9FB8AE"/><circle cx="20" cy="7.5" r="2.6" fill="#9FB8AE"/><circle cx="27" cy="10" r="2.6" fill="#9FB8AE"/>
-      </svg>
-      <div>
-        <h1>Bowl</h1>
-        <span class="eyebrow sub">Feeding calculator</span>
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="Setup">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M4 17h32c0 10-7.2 17-16 17S4 27 4 17Z" fill="none" stroke="#F2EDE0" stroke-width="2.6" stroke-linejoin="round"/>
+          <path d="M8.5 20.5h23c-.6 6.4-5.4 10.5-11.5 10.5S9.1 26.9 8.5 20.5Z" fill="#E0A23C"/>
+          <circle cx="13" cy="10" r="2.6" fill="#9FB8AE"/><circle cx="20" cy="7.5" r="2.6" fill="#9FB8AE"/><circle cx="27" cy="10" r="2.6" fill="#9FB8AE"/>
+        </svg>
+        <div><h1>Bowl</h1><span class="eyebrow sub">Feeding calculator</span></div>
       </div>
+      <button class="iconbtn" id="navClose" type="button" aria-label="Close setup">✕</button>
     </div>
-    <button class="chip ghost" id="addDog" type="button">+ Add dog</button>
-  </header>
 
-  <div class="dogs" id="dogChips"></div>
+    <button class="chip ghost block" id="addDog" type="button">+ Add another dog</button>
 
-  <section class="card" id="result" aria-live="polite"></section>
-
-  <section class="card" id="dayCard"></section>
-
-  <section class="card" id="notesCard">
-    <ul class="notes" id="notes"></ul>
-  </section>
-
-  <details class="panel" id="panelDog">
+    <div class="panels">
+<details class="panel" id="panelDog">
     <summary><h3>Your dog</h3><span class="hint" id="hintDog"></span><span class="caret">▾</span></summary>
     <div class="panel-body">
       <label class="field"><span>Name</span><input id="fName" type="text" placeholder="e.g. Barley" autocomplete="off"></label>
@@ -335,6 +390,31 @@ footer a{color:var(--chalk)}
       </div>
     </div>
   </details>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="mark">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M4 17h32c0 10-7.2 17-16 17S4 27 4 17Z" fill="none" stroke="#F2EDE0" stroke-width="2.6" stroke-linejoin="round"/>
+          <path d="M8.5 20.5h23c-.6 6.4-5.4 10.5-11.5 10.5S9.1 26.9 8.5 20.5Z" fill="#E0A23C"/>
+          <circle cx="13" cy="10" r="2.6" fill="#9FB8AE"/><circle cx="20" cy="7.5" r="2.6" fill="#9FB8AE"/><circle cx="27" cy="10" r="2.6" fill="#9FB8AE"/>
+        </svg>
+        <div><h1>Bowl</h1></div>
+      </div>
+      <button class="chip" id="navOpen" type="button" aria-expanded="false" aria-controls="sidebar">Setup</button>
+    </div>
+
+    <div class="dogs" id="dogChips"></div>
+
+    <div class="main-grid">
+      <section class="card" id="result" aria-live="polite"></section>
+      <section class="card" id="dayCard"></section>
+      <section class="card" id="notesCard">
+        <ul class="notes" id="notes"></ul>
+      </section>
+    </div>
 
   <footer>
     Puppy amounts come from the NRC (2006) growth equation and the revision by Klein et al. (2019) on privately owned puppies; adult and senior amounts from resting energy requirement (70 × kg<sup>0.75</sup>) with standard life-stage and neutering factors, which line up with FEDIAF's 95–110 kcal/kg<sup>0.75</sup>. The cross-check compares this against the bag-style chart in
@@ -344,6 +424,7 @@ footer a{color:var(--chalk)}
     five-minutes-per-month-of-age rule — which the PDSA points out has no trial evidence behind it, so it's used here as a ceiling on lead walking rather than a target.
         Every equation is a starting point — individual dogs vary by a third either way. Weigh regularly, feel for ribs, and let your vet have the final word.
   </footer>
+  </main>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -785,7 +866,7 @@ function render(){
 
   $("mDown").onclick=()=>setMeals(meals-1);
   $("mUp").onclick=()=>setMeals(meals+1);
-  const rw=$("reweigh"); if(rw) rw.onclick=()=>{ $("panelDog").open=true; $("fCur").focus(); $("fCur").select(); };
+  const rw=$("reweigh"); if(rw) rw.onclick=()=>{ openPanel("panelDog"); $("fCur").focus(); $("fCur").select(); };
 
   $("dayCard").hidden=false;
   const dayNotes=renderDay(dog,c,meals);
@@ -874,12 +955,13 @@ seg("segActivity",null,v=>{ draft.activity=v; live(); });
 seg("segBody",null,v=>{ draft.body=v; live(); });
 seg("segNeut",null,v=>{ draft.neutered=v; live(); });
 
-$("addDog").onclick=()=>{ editing=true; loadDraft(blank()); $("deleteDog").hidden=true; $("panelDog").open=true; render(); $("fName").focus(); };
+$("addDog").onclick=()=>{ editing=true; loadDraft(blank()); $("deleteDog").hidden=true; openPanel("panelDog"); render(); $("fName").focus(); };
 $("saveDog").onclick=()=>{
   if(!draft.name.trim()) draft.name = draft.breed==="__other"?"My dog":draft.breed.split(" ")[0];
   if(editing){ dogs.push(Object.assign({},draft)); cur=dogs.length-1; editing=false; }
   else if(dogs.length){ dogs[cur]=Object.assign({},draft); }
-  save(); $("panelDog").open=false; loadDraft(dogs[cur]); $("deleteDog").hidden=false; render(); toast("Saved");
+  save(); if(!mqWide.matches) navOpen(false);
+  loadDraft(dogs[cur]); $("deleteDog").hidden=false; render(); toast("Saved");
 };
 $("deleteDog").onclick=()=>{
   if(!dogs.length) return;
@@ -909,10 +991,31 @@ $("btnImport").onclick=()=>{
   }catch(e){ toast("That didn't look like a backup"); }
 };
 
+
+/* ============================== drawer (phone only) ============================== */
+const mqWide = window.matchMedia("(min-width:820px)");
+function navOpen(open){
+  if(mqWide.matches) return;
+  document.body.classList.toggle("nav-open", open);
+  $("navOpen").setAttribute("aria-expanded", String(open));
+  if(open) { const f=$("sidebar").querySelector("input,select,button"); if(f) f.focus({preventScroll:true}); }
+  else $("navOpen").focus({preventScroll:true});
+}
+$("navOpen").onclick=()=>navOpen(true);
+$("navClose").onclick=()=>navOpen(false);
+$("scrim").onclick=()=>navOpen(false);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && document.body.classList.contains("nav-open")) navOpen(false); });
+mqWide.addEventListener("change",e=>{ if(e.matches) document.body.classList.remove("nav-open"); });
+
+/* opening a panel programmatically should also reveal the drawer on a phone */
+function openPanel(id){ $(id).open=true; navOpen(true); }
+
 /* ============================== boot ============================== */
 $("fDob").max=new Date().toISOString().slice(0,10);
 if(dogs.length){ loadDraft(dogs[cur]); $("deleteDog").hidden=false; }
-else { editing=true; loadDraft(blank()); $("panelDog").open=true; }
+else { editing=true; loadDraft(blank()); }
+$("panelDog").open = mqWide.matches || !dogs.length;
+if(!dogs.length && !mqWide.matches) navOpen(true);
 render();
 
 if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));

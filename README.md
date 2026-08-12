@@ -108,6 +108,21 @@ the data under storage pressure.
 For a puppy, the weight is the input that goes stale. If it hasn't been updated
 in ten days the card says so and offers a shortcut to change it.
 
+## Layout
+
+One responsive layout, three shapes:
+
+| Width | Shape |
+|---|---|
+| under 820px | Single column. Setup lives in an off-canvas drawer behind the **Setup** button; closes on tap-outside, Esc, the ✕, or on save |
+| 820px and up | Sidebar becomes a permanent sticky column, ~296px, widening to 352px past 1080px |
+| 1180px and up | Content splits in two — food and notes on the left, the day's clock on the right |
+| 1500px and up | Notes flow into two columns |
+
+The breakpoint is 820px so iPad portrait (834pt) gets the sidebar rather than the
+drawer. It's defined twice — in the CSS media queries and in the `mqWide`
+matchMedia in the script — so change both together if you move it.
+
 ## Files
 
 | | |
