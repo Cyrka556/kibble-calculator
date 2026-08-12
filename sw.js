@@ -1,5 +1,5 @@
 /* Bowl — offline shell. Bump CACHE when you change any of the files below. */
-const CACHE = "bowl-v8";
+const CACHE = "bowl-v9";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icons/icon.svg", "./icons/icon-192.png", "./icons/icon-512.png",
